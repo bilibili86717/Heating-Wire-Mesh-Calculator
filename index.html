@@ -1196,11 +1196,11 @@ function generatePdfReport(projectName, inp, r) {
     ? '<h2>四、调整记录</h2><ul>' + state.logs.map(l => '<li>' + l + '</li>').join('') + '</ul>'
     : '';
 
-  const fullHTML = `
+  const html = `
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <title>${projectName}</title>
 <style>
   @page { size: A4 portrait; margin: 20mm; }
@@ -1209,6 +1209,7 @@ function generatePdfReport(projectName, inp, r) {
     font-size: 10.5pt; 
     line-height: 1.7; 
     color: #1f2937;
+    background: #fff;
     margin: 0;
     padding: 0;
   }
@@ -1223,21 +1224,22 @@ function generatePdfReport(projectName, inp, r) {
   h2 {
     color: #1e3a5f;
     font-size: 14pt;
-    margin-top: 16pt;
-    border-bottom: 1pt solid #e5e7eb;
+    margin-top: 18pt;
+    border-bottom: 1.5pt solid #e5e7eb;
     padding-bottom: 4pt;
   }
+  h3 { color: #374151; font-size: 12pt; margin-top: 12pt; }
   p.meta { 
     color: #6b7280; 
     font-size: 10pt; 
     text-align: center; 
-    margin-bottom: 14pt; 
+    margin-bottom: 18pt; 
   }
   table {
     border-collapse: collapse;
     width: 100%;
     margin: 8pt 0;
-    font-size: 10pt;
+    font-size: 10.5pt;
   }
   td, th {
     border: 1pt solid #9ca3af;
@@ -1253,27 +1255,42 @@ function generatePdfReport(projectName, inp, r) {
   tr:nth-child(even) td { background: #f8fafc; }
   .warn { color: #dc2626; font-weight: 600; }
   ol, ul { padding-left: 24pt; }
-  li { margin-bottom: 4pt; }
-  .footer-note { 
-    color: #9ca3af; 
-    font-size: 9pt; 
-    text-align: center; 
-    margin-top: 18pt; 
-  }
-  .warning { 
-    background: #fef2f2; 
-    border: 1pt solid #fecaca; 
-    border-left: 4pt solid #dc2626; 
-    padding: 10pt; 
-    margin: 10pt 0; 
-    border-radius: 4pt; 
+  li { margin-bottom: 3pt; }
+  .footer-note { color: #9ca3af; font-size: 9pt; text-align: center; margin-top: 20pt; }
+  .warning {
+    background: #fef2f2;
+    border: 1pt solid #fecaca;
+    border-left: 4pt solid #dc2626;
+    padding: 12px 14px;
+    margin: 12px 0;
+    border-radius: 4pt;
   }
   .warning h3 { color: #dc2626; margin: 0 0 6pt 0; font-size: 12pt; }
   .warning ul { margin: 0; padding-left: 20pt; }
   .warning li { color: #991b1b; }
+  .back-btn {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    padding: 8px 16px;
+    background: #1e3a5f;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  .back-btn:hover { background: #2d5a87; }
+  @media print {
+    .back-btn { display: none; }
+  }
 </style>
 </head>
 <body>
+  <button class="back-btn" onclick="window.close()">← 返回布丝计算器</button>
+  
   <h1>${projectName}</h1>
   <p class="meta">形状：${state.shape} ｜ 布丝方式：${state.layout} ｜ 生成时间：${new Date().toLocaleString('zh-CN')}</p>
 
@@ -1325,19 +1342,22 @@ function generatePdfReport(projectName, inp, r) {
   ${logsHTML}
 
   <p class="footer-note">本报告由「布丝计算器」自动生成 · 所有数据均为本地计算</p>
-</body></html>`;
+</body>
+</html>`;
 
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.write(fullHTML);
-    printWindow.document.close();
-    printWindow.onload = function() {
-      printWindow.print();
-      toast('请在打印窗口中选择"另存为 PDF"');
-    };
-  } else {
-    toast('请允许弹出新窗口以生成PDF报告');
+  const newWin = window.open('', '_blank');
+  if (!newWin) {
+    toast('请允许弹出窗口以生成PDF报告');
+    return;
   }
+  
+  newWin.document.write(html);
+  newWin.document.close();
+  
+  toast('请在打印窗口中选择"另存为 PDF"');
+  setTimeout(() => {
+    newWin.print();
+  }, 500);
 }
 
 /* ================= PWA - Service Worker ================= */
