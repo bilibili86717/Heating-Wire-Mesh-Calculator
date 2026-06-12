@@ -663,8 +663,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
 <script>
 /* ================= State & Persistence ================= */
 const STORAGE_KEY = 'busi_calc_v2';
@@ -1012,6 +1010,27 @@ function generateWordReport(projectName, inp, r) {
   li { margin-bottom: 3pt; }
   .footer-note { color: #9ca3af; font-size: 9pt; text-align: center; margin-top: 20pt; }
 </style>
+<style>
+/* ================= 打印样式 ================= */
+@media print {
+  * { visibility: hidden !important; }
+  body { background: #fff; margin: 0; padding: 0; }
+  #printReport, #printReport * {
+    visibility: visible !important;
+    position: static !important;
+    float: none !important;
+  }
+  #printReport {
+    display: block !important;
+    width: 100%;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff;
+  }
+  @page { size: A4 portrait; margin: 20mm; }
+}
+</style>
 </head>
 <body>
 <div class="WordSection1">
@@ -1148,173 +1167,177 @@ function resetAll() {
   toast('已重置为默认值');
 }
 
-function exportJSON() {
-  if (!lastResults) calculate();
-  const inp = getInputs();
-  const data = {
-    meta: {
-      projectName: document.getElementById('projectName').value,
-      shape: state.shape,
-      layout: state.layout,
-      exportTime: new Date().toISOString()
-    },
-    inputs: inp,
-    results: lastResults,
-    warnings: lastResults.wireCurrent > 0.054 ? ['丝电流超出0.054A'] :
-              (lastResults.powerPerM2 > 900 ? ['功率密度超出900W/m²'] : []),
-    adjustmentLog: state.logs
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = (document.getElementById('projectName').value || '布丝计算') + '.json';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  toast('JSON 已导出');
-}
-
 function generatePdfReport(projectName, inp, r) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4'
-  });
+  let shapeDim = '';
+  switch (state.shape) {
+    case '矩形': shapeDim = '长 ' + inp.heatingLength + ' mm × 宽 ' + inp.heatingWidth + ' mm'; break;
+    case '圆形': shapeDim = '直径 ' + inp.circleDiameter + ' mm'; break;
+    case '梯形': shapeDim = '上底 ' + inp.trapTop + ' mm，下底 ' + inp.trapBottom + ' mm，高 ' + inp.trapHeight + ' mm'; break;
+  }
 
-  let y = 20;
-  const lineHeight = 6;
-  const pageWidth = 210;
-  const marginLeft = 15;
-  const marginRight = 15;
-
-  doc.setFontSize(18);
-  doc.setTextColor(30, 58, 95);
-  doc.text(projectName, pageWidth / 2, y, { align: 'center' });
-  y += 12;
-
-  doc.setFontSize(10);
-  doc.setTextColor(107, 114, 128);
-  doc.text('形状：' + state.shape + ' ｜ 布丝方式：' + state.layout + ' ｜ ' + new Date().toLocaleString('zh-CN'), pageWidth / 2, y, { align: 'center' });
-  y += 15;
-
-  doc.setFontSize(14);
-  doc.setTextColor(30, 58, 95);
-  doc.text('一、输入参数', marginLeft, y);
-  y += 8;
-
-  doc.setFontSize(10);
-  doc.setTextColor(31, 41, 55);
-  
-  const inputData = [
-    ['客户输入电压', inp.voltage + ' V'],
-    ['客户要求功率', inp.power + ' W'],
-    ['加热区形状', state.shape],
-    ['布丝方式', state.layout],
-    ['米阻', inp.resistancePerMeter + ' Ω/m'],
-    ['丝距', inp.wireDistance + ' mm'],
-    ['丝率', inp.wireRatio]
-  ];
-
-  doc.autoTable({
-    startY: y,
-    head: [['参数', '数值']],
-    body: inputData,
-    theme: 'striped',
-    headStyles: {
-      fillColor: [243, 244, 246],
-      textColor: [30, 58, 95],
-      fontSize: 10
-    },
-    bodyStyles: {
-      fontSize: 10,
-      cellPadding: 4
-    },
-    columnStyles: {
-      0: { width: 70 },
-      1: { width: 100 }
-    },
-    margin: { left: marginLeft, right: marginRight }
-  });
-
-  y = doc.lastAutoTable.finalY + 10;
-
-  doc.setFontSize(14);
-  doc.setTextColor(30, 58, 95);
-  doc.text('二、计算结果', marginLeft, y);
-  y += 8;
-
-  const resultData = [
-    ['加热面积', r.area.toFixed(2) + ' mm² = ' + r.areaM2.toFixed(4) + ' m²'],
-    ['功率密度', r.powerPerM2.toFixed(1) + ' W/m²'],
-    ['等效阻值', r.resistance.toFixed(2) + ' Ω'],
-    ['等效电流', r.current.toFixed(4) + ' A'],
-    ['单丝阻值', r.wireResistance.toFixed(4) + ' Ω'],
-    ['丝根数', r.totalWires + ' 根'],
-    ['丝电流', r.wireCurrent.toFixed(4) + ' A'],
-    ['分组数', r.groupCount + ' 组'],
-    ['每组根数', r.wiresPerGroup + ' 根'],
-    ['总面电阻', r.sheetResistance.toFixed(2) + ' Ω/□'],
-    ['小组汇流条长度', r.busbarLength.toFixed(1) + ' mm'],
-    ['布丝机频率', r.weavingFreq !== null ? r.weavingFreq.toFixed(1) + ' Hz' : '不适用']
-  ];
-
-  doc.autoTable({
-    startY: y,
-    head: [['计算项', '数值']],
-    body: resultData,
-    theme: 'striped',
-    headStyles: {
-      fillColor: [243, 244, 246],
-      textColor: [30, 58, 95],
-      fontSize: 10
-    },
-    bodyStyles: {
-      fontSize: 10,
-      cellPadding: 4
-    },
-    columnStyles: {
-      0: { width: 75 },
-      1: { width: 95 }
-    },
-    margin: { left: marginLeft, right: marginRight }
-  });
-
-  y = doc.lastAutoTable.finalY + 10;
-
-  doc.setFontSize(14);
-  doc.setTextColor(30, 58, 95);
-  doc.text('三、警告信息', marginLeft, y);
-  y += 8;
+  const equivLen = getEquivalentLength(inp);
+  const equivWidth = getEquivalentWidth(inp);
+  const wiresPerGroup = r.totalWires > 0 && r.groupCount > 0 ? Math.round(r.totalWires / r.groupCount) : 0;
 
   const warnings = [];
   if (r.wireCurrent > 0.054) warnings.push('丝电流超出 0.054 A，可能出现丝蕴');
   if (r.powerPerM2 > 900) warnings.push('每平方米功率大于 900 W/m²，建议加装温控器');
 
+  let warningsHTML = '';
   if (warnings.length > 0) {
-    doc.setTextColor(245, 158, 11);
-    doc.setFontSize(10);
-    doc.setFillColor(255, 251, 235);
-    doc.rect(marginLeft - 2, y - 4, pageWidth - marginLeft - marginRight + 4, 4 + warnings.length * (lineHeight + 2), 'F');
-    doc.setDrawColor(245, 158, 11);
-    doc.rect(marginLeft - 2, y - 4, pageWidth - marginLeft - marginRight + 4, 4 + warnings.length * (lineHeight + 2));
-    
-    warnings.forEach((w, i) => {
-      doc.text('⚠ ' + w, marginLeft, y + i * (lineHeight + 2));
-    });
-    y += warnings.length * (lineHeight + 2) + 8;
-  } else {
-    doc.setTextColor(34, 197, 94);
-    doc.text('✓ 所有参数正常', marginLeft, y);
-    y += 8;
+    warningsHTML = `
+      <div class="warning">
+        <h3>⚠ 警告</h3>
+        <ul>${warnings.map(w => '<li>' + w + '</li>').join('')}</ul>
+      </div>`;
   }
 
-  doc.setTextColor(156, 163, 175);
-  doc.setFontSize(9);
-  doc.text('本报告由「布丝计算器」自动生成 · 所有数据均为本地计算', pageWidth / 2, 280, { align: 'center' });
+  const logsHTML = state.logs.length > 0
+    ? '<h2>四、调整记录</h2><ul>' + state.logs.map(l => '<li>' + l + '</li>').join('') + '</ul>'
+    : '';
 
-  doc.save(projectName + '.pdf');
-  toast('PDF 报告已生成');
+  const fullHTML = `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>${projectName}</title>
+<style>
+  @page { size: A4 portrait; margin: 20mm; }
+  body { 
+    font-family: "微软雅黑", "Microsoft YaHei", Arial; 
+    font-size: 10.5pt; 
+    line-height: 1.7; 
+    color: #1f2937;
+    margin: 0;
+    padding: 0;
+  }
+  h1 {
+    color: #1e3a5f;
+    font-size: 20pt;
+    text-align: center;
+    border-bottom: 3pt solid #f59e0b;
+    padding-bottom: 8pt;
+    margin-bottom: 16pt;
+  }
+  h2 {
+    color: #1e3a5f;
+    font-size: 14pt;
+    margin-top: 16pt;
+    border-bottom: 1pt solid #e5e7eb;
+    padding-bottom: 4pt;
+  }
+  p.meta { 
+    color: #6b7280; 
+    font-size: 10pt; 
+    text-align: center; 
+    margin-bottom: 14pt; 
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 8pt 0;
+    font-size: 10pt;
+  }
+  td, th {
+    border: 1pt solid #9ca3af;
+    padding: 6pt 10pt;
+    vertical-align: middle;
+  }
+  th {
+    background: #1e3a5f;
+    color: #fff;
+    text-align: left;
+    font-weight: 600;
+  }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .warn { color: #dc2626; font-weight: 600; }
+  ol, ul { padding-left: 24pt; }
+  li { margin-bottom: 4pt; }
+  .footer-note { 
+    color: #9ca3af; 
+    font-size: 9pt; 
+    text-align: center; 
+    margin-top: 18pt; 
+  }
+  .warning { 
+    background: #fef2f2; 
+    border: 1pt solid #fecaca; 
+    border-left: 4pt solid #dc2626; 
+    padding: 10pt; 
+    margin: 10pt 0; 
+    border-radius: 4pt; 
+  }
+  .warning h3 { color: #dc2626; margin: 0 0 6pt 0; font-size: 12pt; }
+  .warning ul { margin: 0; padding-left: 20pt; }
+  .warning li { color: #991b1b; }
+</style>
+</head>
+<body>
+  <h1>${projectName}</h1>
+  <p class="meta">形状：${state.shape} ｜ 布丝方式：${state.layout} ｜ 生成时间：${new Date().toLocaleString('zh-CN')}</p>
+
+  <h2>一、输入参数</h2>
+  <table>
+    <tr><th width="40%">参数</th><th>数值</th></tr>
+    <tr><td>客户输入电压</td><td>${inp.voltage} V</td></tr>
+    <tr><td>客户要求功率</td><td>${inp.power} W</td></tr>
+    <tr><td>加热区形状与尺寸</td><td>${state.shape}（${shapeDim}）</td></tr>
+    <tr><td>布丝方式</td><td>${state.layout}（${state.shape === '圆形' ? '圆形不影响计算' : '影响丝根数与单丝长度'}）</td></tr>
+    <tr><td>米阻</td><td>${inp.resistancePerMeter} Ω/m</td></tr>
+    <tr><td>丝距</td><td>${inp.wireDistance} mm</td></tr>
+    <tr><td>丝率</td><td>${inp.wireRatio}</td></tr>
+  </table>
+
+  <h2>二、计算结果</h2>
+  <table>
+    <tr><th width="45%">计算项</th><th>数值</th></tr>
+    <tr><td>加热面积</td><td>${r.area.toFixed(4)} m²</td></tr>
+    <tr><td>每平方米功率</td><td>${r.powerPerM2.toFixed(2)} W/m²</td></tr>
+    <tr><td>阻值</td><td>${r.resistance.toFixed(2)} Ω</td></tr>
+    <tr><td>电流</td><td>${r.current.toFixed(2)} A</td></tr>
+    <tr><td>丝电流</td><td class="${r.wireCurrent > 0.054 ? 'warn' : ''}">${r.wireCurrent.toFixed(4)} A</td></tr>
+    <tr><td>电阻丝总根数</td><td>${r.totalWires} 根</td></tr>
+    <tr><td>单丝阻值</td><td>${r.singleWireResistance.toFixed(4)} Ω</td></tr>
+    <tr><td>总面电阻</td><td>${r.totalSurfaceResistance.toFixed(6)} Ω</td></tr>
+    <tr><td>分组数</td><td>${r.groupCount} 组</td></tr>
+    <tr><td>每组根数</td><td>${wiresPerGroup} 根</td></tr>
+    <tr><td>小组汇流条长度 / 数量</td><td>${r.smallBusLength.toFixed(1)} mm × 2 个</td></tr>
+    <tr><td>大组汇流条</td><td>${r.largeBusLen !== null ? r.largeBusLen.toFixed(1) + ' mm × ' + r.largeBusCount + ' 个' : '无'}</td></tr>
+    <tr><td>直丝布丝机频率</td><td>${r.weavingFreq !== null ? r.weavingFreq.toFixed(1) + ' Hz' : '不适用'}</td></tr>
+  </table>
+
+  <h2>三、计算公式与过程</h2>
+  <ol>
+    <li>加热面积 = ${state.shape}面积公式计算（单位 mm² → m²，除以 1,000,000）= ${r.area.toFixed(4)} m²</li>
+    <li>每平方米功率 = 功率 / 面积 = ${inp.power} / ${r.area.toFixed(4)} ≈ ${r.powerPerM2.toFixed(2)} W/m²</li>
+    <li>阻值 = 电压² / 功率 = ${inp.voltage}² / ${inp.power} ≈ ${r.resistance.toFixed(2)} Ω</li>
+    <li>电流 = 电压 / 阻值 ≈ ${r.current.toFixed(2)} A</li>
+    <li>电阻丝总根数 = 等效长 / 丝距 + 1 = ${equivLen.toFixed(0)} / ${inp.wireDistance} + 1 = ${r.totalWires}</li>
+    <li>单丝阻值 = 米阻 × (等效宽/1000) × 丝率 = ${inp.resistancePerMeter} × (${equivWidth.toFixed(1)}/1000) × ${inp.wireRatio} ≈ ${r.singleWireResistance.toFixed(4)} Ω</li>
+    <li>总面电阻 = 单丝阻值 / 根数 ≈ ${r.totalSurfaceResistance.toFixed(6)} Ω</li>
+    <li>分组数 = √(阻值 / 总面电阻) 四舍五入 ≈ ${r.groupCount}</li>
+    <li>丝电流 = 电流 / (根数 / 分组数) ≈ ${r.wireCurrent.toFixed(4)} A</li>
+    <li>小组汇流条长度 = 等效长 / 组数 ≈ ${r.smallBusLength.toFixed(1)} mm</li>
+  </ol>
+
+  ${warningsHTML}
+  ${logsHTML}
+
+  <p class="footer-note">本报告由「布丝计算器」自动生成 · 所有数据均为本地计算</p>
+</body></html>`;
+
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(fullHTML);
+    printWindow.document.close();
+    printWindow.onload = function() {
+      printWindow.print();
+      toast('请在打印窗口中选择"另存为 PDF"');
+    };
+  } else {
+    toast('请允许弹出新窗口以生成PDF报告');
+  }
 }
 
 /* ================= PWA - Service Worker ================= */
@@ -1339,5 +1362,8 @@ if (isIOS && !navigator.standalone) {
 loadState();
 calculate();
 </script>
+
+<!-- 打印报告容器（隐藏，仅在打印时显示） -->
+<div id="printReport" style="display:none"></div>
 </body>
 </html>
