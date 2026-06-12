@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1e3a5f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="布丝计算器">
+<meta name="mobile-web-app-capable" content="yes">
+<title>布丝计算器</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
+<style>
+  :root {
+    --primary: #1e3a5f;
+    --primary-2: #2d5a87;
+    --accent: #f59e0b;
+    --accent-dark: #d97706;
+    --bg: #f5f7fa;
+    --card-bg: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --warn: #dc2626;
+    --warn-bg: #fef2f2;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
+                 "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  input, button, select, textarea { font-family: inherit; }
+
+  /* ============ Header ============ */
+  header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
+    color: #fff;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header .wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  header h1::before { content: "🔥"; font-size: 18px; }
+  header p {
+    font-size: 11px;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+  header .btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  header button {
+    background: var(--accent);
+    color: #fff;
+    border: 0;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
+    white-space: nowrap;
+  }
+  header button:active { transform: scale(0.96); }
+  header button.secondary {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+
+  /* ============ Main Layout ============ */
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px 14px 40px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  /* 桌面端双栏 */
+  @media (min-width: 900px) {
+    main { grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px 24px 60px; }
+  }
+
+  /* ============ Card ============ */
+  .card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 16px 16px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+  }
+  @media (min-width: 900px) {
+    .card { padding: 20px 24px 24px; border-radius: 14px; }
+  }
+  .card h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2::before {
+    content: "";
+    width: 4px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* ============ Forms ============ */
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+  }
+  .field input[type="text"],
+  .field input[type="number"] {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+    background: #fafbfc;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .field input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(30,58,95,0.12);
+  }
+  .field .unit {
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: 6px;
+    font-weight: 400;
+  }
+
+  .row { display: grid; gap: 12px; }
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 500px) {
+    .row-3 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 380px) {
+    .row-2, .row-3 { grid-template-columns: 1fr; }
+  }
+
+  /* ============ Chip selector ============ */
+  .chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .chip {
+    padding: 10px 16px;
+    border: 1.5px solid #d1d5db;
+    background: #f9fafb;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 500;
+    color: #374151;
+    flex: 1;
+    min-width: 80px;
+    text-align: center;
+  }
+  .chip:hover { background: #eef2f7; }
+  .chip.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(245,158,11,0.25);
+  }
+  .chip.active.shape-rect {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(30,58,95,0.2);
+  }
+
+  /* ============ Dynamic shape fields ============ */
+  .shape-fields {
+    background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 12px;
+    margin: 10px 0 16px;
+  }
+  .shape-fields.hidden { display: none; }
+
+  /* ============ Results table ============ */
+  .result-list { display: flex; flex-direction: column; gap: 2px; }
+  .result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .result-item:hover { background: #f8fafc; }
+  .result-item.highlight { background: rgba(30,58,95,0.06); border-left: 3px solid var(--primary); padding-left: 10px; }
+  .result-item.warn {
+    background: var(--warn-bg);
+    color: var(--warn);
+    border-left: 3px solid var(--warn);
+    padding-left: 10px;
+  }
+  .result-item .label { font-size: 14px; color: #4b5563; }
+  .result-item.warn .label { color: var(--warn); }
+  .result-item .value {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    text-align: right;
+    white-space: nowrap;
+    margin-left: 10px;
+  }
+  .result-item.warn .value { color: var(--warn); }
+  .result-item .unit-suffix {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: 3px;
+  }
+
+  /* ============ Inline adjusters ============ */
+  .adjuster {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .adjuster input {
+    width: 70px;
+    padding: 6px 8px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: right;
+    background: #fff;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .adjuster input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+  }
+  .adjuster button {
+    padding: 7px 12px;
+    background: var(--accent);
+    color: #fff;
+    border: 0;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .adjuster button:active { transform: scale(0.96); }
+
+  /* ============ Power-voltage adjust ============ */
+  .secondary-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border);
+  }
+  .adj-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .adj-row label {
+    font-size: 13px;
+    color: #4b5563;
+    min-width: 70px;
+    font-weight: 600;
+  }
+  .adj-row input {
+    flex: 1;
+    min-width: 80px;
+    padding: 10px 12px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fafbfc;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .adj-row input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(30,58,95,0.12);
+  }
+  .adj-row button {
+    padding: 10px 14px;
+    background: var(--primary);
+    color: #fff;
+    border: 0;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .adj-row button:active { transform: scale(0.96); }
+  .adj-row .out {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent-dark);
+    min-width: 90px;
+    text-align: right;
+  }
+
+  /* ============ Warning / log ============ */
+  .warning {
+    background: var(--warn-bg);
+    border: 1px solid #fecaca;
+    border-left: 4px solid var(--warn);
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin: 12px 0 0;
+  }
+  .warning h3 { color: var(--warn); font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .warning ul { list-style: none; font-size: 13px; color: #991b1b; padding-left: 0; }
+  .warning li { padding: 2px 0; }
+
+  .log-box {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-top: 12px;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+  .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .log-header h3 { font-size: 13px; color: #374151; }
+  .log-header button {
+    font-size: 12px;
+    color: var(--muted);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+  .log-header button:hover { color: var(--warn); background: #fef2f2; }
+  .log-item { font-size: 13px; color: #4b5563; padding: 3px 0; line-height: 1.5; word-break: break-all; }
+  .log-item::before { content: "• "; color: var(--accent); font-weight: 700; }
+
+  /* ============ Footer ============ */
+  footer {
+    text-align: center;
+    padding: 20px 16px 40px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  footer .tip {
+    background: #fff;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-size: 12px;
+  }
+
+  /* ============ Toast ============ */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(30,58,95,0.95);
+    color: #fff;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 200;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  /* ============ Small phones ============ */
+  @media (max-width: 400px) {
+    header h1 { font-size: 16px; }
+    header p { display: none; }
+    header button { padding: 8px 12px; font-size: 13px; }
+    .card { padding: 14px 12px 18px; border-radius: 10px; }
+    .card h2 { font-size: 15px; }
+    .field input[type="text"], .field input[type="number"] { font-size: 16px; padding: 12px; }
+    .result-item .label { font-size: 13px; }
+    .result-item .value { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div>
+      <h1>布丝计算器</h1>
+      <p>支持 矩形 / 圆形 / 梯形 · 自动保存</p>
+    </div>
+    <div class="btns">
+      <button id="resetBtn" class="secondary" style="background:#6b7280">🔄 重置</button>
+      <button id="reportBtn" class="secondary">📄 生成报告</button>
+      <button id="exportBtn" class="secondary" style="background:#059669">📦 导出JSON</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ INPUT ============ -->
+  <div class="card">
+    <h2>输入参数</h2>
+
+    <div class="field">
+      <label>项目名称</label>
+      <input type="text" id="projectName" placeholder="例如：加热板A - 客户X" value="布丝计算项目">
+    </div>
+
+    <div class="row row-2">
+      <div class="field">
+        <label>输入电压 <span class="unit">(V)</span></label>
+        <input type="number" id="voltage" value="220" step="any" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>要求功率 <span class="unit">(W)</span></label>
+        <input type="number" id="power" value="1000" step="any" inputmode="decimal">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>加热区形状</label>
+      <div class="chip-group" id="shapeGroup">
+        <span class="chip active shape-rect" data-shape="矩形">矩形</span>
+        <span class="chip" data-shape="圆形">圆形</span>
+        <span class="chip" data-shape="梯形">梯形</span>
+      </div>
+    </div>
+
+    <!-- 矩形 -->
+    <div class="shape-fields" id="shapeRect">
+      <div class="row row-2">
+        <div class="field" style="margin:0">
+          <label>长度 <span class="unit">(mm)</span></label>
+          <input type="number" id="heatingLength" value="1000" step="any" inputmode="decimal">
+        </div>
+        <div class="field" style="margin:0">
+          <label>宽度 <span class="unit">(mm)</span></label>
+          <input type="number" id="heatingWidth" value="500" step="any" inputmode="decimal">
+        </div>
+      </div>
+    </div>
+
+    <!-- 圆形 -->
+    <div class="shape-fields hidden" id="shapeCircle">
+      <div class="field" style="margin:0">
+        <label>直径 <span class="unit">(mm)</span></label>
+        <input type="number" id="circleDiameter" value="500" step="any" inputmode="decimal">
+      </div>
+    </div>
+
+    <!-- 梯形 -->
+    <div class="shape-fields hidden" id="shapeTrapezoid">
+      <div class="row row-3">
+        <div class="field" style="margin:0">
+          <label>上底 <span class="unit">(mm)</span></label>
+          <input type="number" id="trapTop" value="300" step="any" inputmode="decimal">
+        </div>
+        <div class="field" style="margin:0">
+          <label>下底 <span class="unit">(mm)</span></label>
+          <input type="number" id="trapBottom" value="500" step="any" inputmode="decimal">
+        </div>
+        <div class="field" style="margin:0">
+          <label>高 <span class="unit">(mm)</span></label>
+          <input type="number" id="trapHeight" value="400" step="any" inputmode="decimal">
+        </div>
+      </div>
+    </div>
+
+    <div class="row row-3">
+      <div class="field">
+        <label>米阻 <span class="unit">(Ω/m)</span></label>
+        <input type="number" id="resistancePerMeter" value="0.1" step="any" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>丝距 <span class="unit">(mm)</span></label>
+        <input type="number" id="wireDistance" value="20" min="1" step="any" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>丝率</label>
+        <input type="number" id="wireRatio" value="1" step="any" inputmode="decimal">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>布丝方式 <span id="layoutHint" class="unit" style="color:#f59e0b;display:none">（圆形不影响计算）</span></label>
+      <div class="chip-group" id="layoutGroup">
+        <span class="chip active" data-layout="横向">横向</span>
+        <span class="chip" data-layout="竖向">竖向</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RESULT ============ -->
+  <div class="card">
+    <h2>计算结果</h2>
+    <div class="result-list" id="resultList">
+      <div class="result-item highlight">
+        <span class="label">加热面积</span>
+        <span><span class="value" id="r-area">0.0000</span><span class="unit-suffix">m²</span></span>
+      </div>
+      <div class="result-item">
+        <span class="label">每平方米功率</span>
+        <span class="adjuster">
+          <input type="number" id="adjPowerM2" step="any" value="0" inputmode="decimal">
+          <button id="applyPowerM2">应用</button>
+          <span class="unit-suffix">W/m²</span>
+        </span>
+      </div>
+      <div class="result-item">
+        <span class="label">阻值</span>
+        <span><span class="value" id="r-resistance">0.00</span><span class="unit-suffix">Ω</span></span>
+      </div>
+      <div class="result-item">
+        <span class="label">电流</span>
+        <span><span class="value" id="r-current">0.00</span><span class="unit-suffix">A</span></span>
+      </div>
+      <div class="result-item" id="r-wirecurrent-row">
+        <span class="label">丝电流</span>
+        <span><span class="value" id="r-wirecurrent">0.000</span><span class="unit-suffix">A</span></span>
+      </div>
+      <div class="result-item highlight">
+        <span class="label">电阻丝总根数</span>
+        <span><span class="value" id="r-wires">0</span><span class="unit-suffix">根</span></span>
+      </div>
+      <div class="result-item">
+        <span class="label">单丝阻值</span>
+        <span><span class="value" id="r-single">0.000</span><span class="unit-suffix">Ω</span></span>
+      </div>
+      <div class="result-item">
+        <span class="label">总面电阻</span>
+        <span><span class="value" id="r-surface">0.00000</span><span class="unit-suffix">Ω</span></span>
+      </div>
+      <div class="result-item">
+        <span class="label">分组数</span>
+        <span class="adjuster">
+          <input type="number" id="adjGroups" step="1" min="1" value="1" inputmode="numeric">
+          <button id="applyGroups">应用</button>
+          <span class="unit-suffix">组</span>
+        </span>
+      </div>
+      <div class="result-item">
+        <span class="label">小组汇流条长度</span>
+        <span><span class="value" id="r-smallBusLen">0.0</span><span class="unit-suffix">mm</span></span>
+      </div>
+      <div class="result-item">
+        <span class="label">小组汇流条数量</span>
+        <span><span class="value" id="r-smallBusCount">2</span><span class="unit-suffix">个</span></span>
+      </div>
+      <div class="result-item">
+        <span class="label">大组汇流条</span>
+        <span><span class="value" id="r-largeBus">—</span></span>
+      </div>
+      <div class="result-item">
+        <span class="label">直丝布丝机频率</span>
+        <span><span class="value" id="r-freq">—</span></span>
+      </div>
+    </div>
+
+    <div class="secondary-grid">
+      <div class="adj-row">
+        <label>调整功率</label>
+        <input type="number" id="adjPower" step="any" placeholder="输入功率" inputmode="decimal">
+        <button id="calcVoltage">求电压</button>
+        <span class="out" id="outVoltage">= 0 V</span>
+      </div>
+      <div class="adj-row">
+        <label>调整电压</label>
+        <input type="number" id="adjVoltage" step="any" placeholder="输入电压" inputmode="decimal">
+        <button id="calcPower">求功率</button>
+        <span class="out" id="outPower">= 0 W</span>
+      </div>
+    </div>
+
+    <div id="warningArea"></div>
+    <div id="logArea" style="display:none">
+      <div class="log-box">
+        <div class="log-header">
+          <h3>📝 调整记录</h3>
+          <button id="clearLog">清空</button>
+        </div>
+        <div id="logList"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div>布丝计算器 · 纯本地计算，数据不上传 · 支持 PWA 安装到手机桌面</div>
+  <div class="tip">
+    💡 提示：将本页面加入主屏幕后可离线使用。报告以 Word 格式导出，A4 纸可直接打印。
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= State & Persistence ================= */
+const STORAGE_KEY = 'busi_calc_v2';
+const state = {
+  shape: '矩形',
+  layout: '横向',
+  logs: []
+};
+
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    if (!s) return;
+    const map = {
+      projectName: '布丝计算项目',
+      voltage: 220, power: 1000,
+      heatingLength: 1000, heatingWidth: 500,
+      circleDiameter: 500,
+      trapTop: 300, trapBottom: 500, trapHeight: 400,
+      resistancePerMeter: 0.1, wireDistance: 20, wireRatio: 1
+    };
+    for (const [key, def] of Object.entries(map)) {
+      document.getElementById(key).value = s[key] ?? def;
+    }
+    if (s.shape) setShape(s.shape);
+    if (s.layout) setLayout(s.layout);
+    state.logs = s.logs || [];
+    renderLogs();
+  } catch (e) {}
+}
+
+function saveState() {
+  const keys = ['projectName','voltage','power','heatingLength','heatingWidth',
+                'circleDiameter','trapTop','trapBottom','trapHeight',
+                'resistancePerMeter','wireDistance','wireRatio'];
+  const data = {};
+  keys.forEach(k => data[k] = document.getElementById(k).value);
+  data.shape = state.shape;
+  data.layout = state.layout;
+  data.logs = state.logs;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+/* ================= Shape / Layout switch ================= */
+function setShape(shape) {
+  state.shape = shape;
+  document.querySelectorAll('#shapeGroup .chip').forEach(el => {
+    el.classList.toggle('active', el.dataset.shape === shape);
+  });
+  document.getElementById('shapeRect').classList.toggle('hidden', shape !== '矩形');
+  document.getElementById('shapeCircle').classList.toggle('hidden', shape !== '圆形');
+  document.getElementById('shapeTrapezoid').classList.toggle('hidden', shape !== '梯形');
+  // 圆形时显示提示：布丝方式不影响计算
+  const hint = document.getElementById('layoutHint');
+  if (shape === '圆形') {
+    hint.style.display = 'inline';
+    hint.textContent = '（圆形不影响计算）';
+  } else {
+    hint.style.display = 'none';
+  }
+  calculate();
+}
+
+function setLayout(layout) {
+  state.layout = layout;
+  document.querySelectorAll('#layoutGroup .chip').forEach(el => {
+    el.classList.toggle('active', el.dataset.layout === layout);
+  });
+  calculate(); // 切换布丝方式时重新计算
+}
+
+/* ================= Core calculation ================= */
+function getInputs() {
+  const f = id => parseFloat(document.getElementById(id).value) || 0;
+  return {
+    voltage: f('voltage'),
+    power: f('power'),
+    resistancePerMeter: f('resistancePerMeter'),
+    wireDistance: f('wireDistance'),
+    wireRatio: f('wireRatio'),
+    heatingLength: f('heatingLength'),
+    heatingWidth: f('heatingWidth'),
+    circleDiameter: f('circleDiameter'),
+    trapTop: f('trapTop'), trapBottom: f('trapBottom'), trapHeight: f('trapHeight')
+  };
+}
+
+// 等效长度：用于计算"丝根数排列方向"的长度
+function getEquivalentLength(inp) {
+  switch (state.shape) {
+    case '圆形': return inp.circleDiameter;
+    case '梯形':
+      // 横向：丝在高方向排列，根数 = 高/丝距+1
+      // 竖向：丝在宽度方向排列，根数 = (上底+下底)/2 / 丝距+1
+      return state.layout === '横向' ? inp.trapHeight : (inp.trapTop + inp.trapBottom) / 2;
+    default: // 矩形
+      // 横向：丝在宽度方向排列，根数 = 宽度/丝距+1
+      // 竖向：丝在长度方向排列，根数 = 长度/丝距+1
+      return state.layout === '横向' ? inp.heatingWidth : inp.heatingLength;
+  }
+}
+// 等效宽度：用于计算"单丝长度"
+function getEquivalentWidth(inp) {
+  switch (state.shape) {
+    case '圆形': return inp.circleDiameter;
+    case '梯形':
+      // 横向：丝长 = (上底+下底)/2
+      // 竖向：丝长 = 高
+      return state.layout === '横向' ? (inp.trapTop + inp.trapBottom) / 2 : inp.trapHeight;
+    default: // 矩形
+      // 横向：丝长度 = 加热区长度
+      // 竖向：丝长度 = 加热区宽度
+      return state.layout === '横向' ? inp.heatingLength : inp.heatingWidth;
+  }
+}
+function getArea(inp) {
+  let mm2 = 0;
+  switch (state.shape) {
+    case '矩形': mm2 = inp.heatingLength * inp.heatingWidth; break;
+    case '圆形': { const r = inp.circleDiameter / 2; mm2 = Math.PI * r * r; break; }
+    case '梯形': mm2 = ((inp.trapTop + inp.trapBottom) * inp.trapHeight) / 2; break;
+  }
+  return mm2 / 1_000_000;
+}
+
+let lastResults = null;
+
+function calculate() {
+  const inp = getInputs();
+  const area = getArea(inp);
+  const powerPerM2 = area > 0 ? inp.power / area : 0;
+  const resistance = inp.power > 0 ? (inp.voltage * inp.voltage) / inp.power : 0;
+  const current = resistance > 0 ? inp.voltage / resistance : 0;
+  const equivLen = getEquivalentLength(inp);
+  const totalWires = inp.wireDistance > 0 ? Math.floor(equivLen / inp.wireDistance) + 1 : 0;
+  const equivWidth = getEquivalentWidth(inp);
+  const singleWireResistance = inp.resistancePerMeter * (equivWidth / 1000) * inp.wireRatio;
+  const totalSurfaceResistance = totalWires > 0 ? singleWireResistance / totalWires : 0;
+  const groupCount = totalSurfaceResistance > 0
+    ? Math.max(1, Math.round(Math.sqrt(resistance / totalSurfaceResistance)))
+    : 1;
+  const wireCurrent = totalWires > 0 && groupCount > 0
+    ? current / (totalWires / groupCount)
+    : 0;
+  const smallBusLength = equivLen / (groupCount || 1);
+  const largeBusLen = groupCount > 1 ? smallBusLength * 2 : null;
+  const largeBusCount = groupCount > 1 ? groupCount - 1 : null;
+  const weavingFreq = inp.wireRatio === 1 ? (40 * inp.wireDistance) / 2 : null;
+
+  lastResults = {
+    area, powerPerM2, resistance, current, wireCurrent,
+    totalWires, singleWireResistance, totalSurfaceResistance,
+    groupCount, smallBusLength, smallBusCount: 2,
+    largeBusLen, largeBusCount, weavingFreq
+  };
+
+  document.getElementById('r-area').textContent = area.toFixed(4);
+  document.getElementById('adjPowerM2').value = powerPerM2.toFixed(2);
+  document.getElementById('r-resistance').textContent = resistance.toFixed(2);
+  document.getElementById('r-current').textContent = current.toFixed(2);
+  document.getElementById('r-wirecurrent').textContent = wireCurrent.toFixed(4);
+  document.getElementById('r-wires').textContent = totalWires;
+  document.getElementById('r-single').textContent = singleWireResistance.toFixed(4);
+  document.getElementById('r-surface').textContent = totalSurfaceResistance.toFixed(6);
+  document.getElementById('adjGroups').value = groupCount;
+  document.getElementById('r-smallBusLen').textContent = smallBusLength.toFixed(1);
+  document.getElementById('r-largeBus').textContent =
+    largeBusLen !== null ? largeBusLen.toFixed(1) + ' mm × ' + largeBusCount + ' 个' : '无';
+  document.getElementById('r-freq').textContent =
+    weavingFreq !== null ? weavingFreq.toFixed(1) + ' Hz' : '不适用';
+
+  // warnings
+  const warnings = [];
+  if (wireCurrent > 0.054) warnings.push('丝电流超出 0.054 A，可能出现丝蕴');
+  if (powerPerM2 > 900) warnings.push('每平方米功率大于 900 W/m²，建议加装温控器');
+  const warningArea = document.getElementById('warningArea');
+  const wireRow = document.getElementById('r-wirecurrent-row');
+  if (warnings.length > 0) {
+    warningArea.innerHTML =
+      '<div class="warning"><h3>⚠ 警告</h3><ul>' +
+      warnings.map(w => '<li>' + w + '</li>').join('') +
+      '</ul></div>';
+    wireRow.classList.add('warn');
+  } else {
+    warningArea.innerHTML = '';
+    wireRow.classList.remove('warn');
+  }
+  saveState();
+}
+
+/* ================= Adjustments ================= */
+function addLog(msg) {
+  state.logs.unshift(msg);
+  if (state.logs.length > 30) state.logs.length = 30;
+  renderLogs();
+  saveState();
+}
+function renderLogs() {
+  const area = document.getElementById('logArea');
+  const list = document.getElementById('logList');
+  if (state.logs.length === 0) { area.style.display = 'none'; return; }
+  area.style.display = 'block';
+  list.innerHTML = state.logs.map(l => '<div class="log-item">' + l + '</div>').join('');
+}
+
+function adjustPowerByM2() {
+  const val = parseFloat(document.getElementById('adjPowerM2').value);
+  if (!val || val <= 0) { toast('请输入有效的功率密度'); return; }
+  const inp = getInputs();
+  const area = getArea(inp);
+  const oldPower = inp.power;
+  const newPower = val * area;
+  document.getElementById('power').value = newPower.toFixed(2);
+  calculate();
+  addLog('调整功率密度 ' + val.toFixed(2) + ' W/m² → 功率 ' + newPower.toFixed(2) + ' W（原值 ' + oldPower.toFixed(2) + ' W）');
+  toast('功率已更新');
+}
+
+function adjustGroups() {
+  const newGroupCount = parseInt(document.getElementById('adjGroups').value);
+  if (!newGroupCount || newGroupCount < 1) { toast('分组数必须 ≥ 1'); return; }
+  if (!lastResults) { calculate(); }
+  const inp = getInputs();
+  const totalSurface = lastResults.totalSurfaceResistance;
+  const adjustedResistance = newGroupCount * newGroupCount * totalSurface;
+  if (adjustedResistance <= 0) { toast('阻值计算异常'); return; }
+  const newPower = (inp.voltage * inp.voltage) / adjustedResistance;
+  const oldPower = inp.power;
+  document.getElementById('power').value = newPower.toFixed(2);
+  calculate();
+  addLog('手动调整分组数 ' + newGroupCount + ' → 阻值 ' + adjustedResistance.toFixed(2) + ' Ω → 功率 ' + newPower.toFixed(2) + ' W（原值 ' + oldPower.toFixed(2) + ' W）');
+  toast('分组数已更新');
+}
+
+function doCalcVoltage() {
+  const p = parseFloat(document.getElementById('adjPower').value);
+  if (!p || !lastResults) { toast('请先输入功率值'); return; }
+  const R = lastResults.groupCount * lastResults.groupCount * lastResults.totalSurfaceResistance;
+  const v = Math.sqrt(R * p);
+  document.getElementById('outVoltage').textContent = '= ' + v.toFixed(2) + ' V';
+  addLog('设定功率 ' + p + ' W → 电压 ' + v.toFixed(2) + ' V');
+  toast('已计算电压');
+}
+function doCalcPower() {
+  const v = parseFloat(document.getElementById('adjVoltage').value);
+  if (!v || !lastResults) { toast('请先输入电压值'); return; }
+  const R = lastResults.groupCount * lastResults.groupCount * lastResults.totalSurfaceResistance;
+  const p = (v * v) / R;
+  document.getElementById('outPower').textContent = '= ' + p.toFixed(2) + ' W';
+  addLog('设定电压 ' + v + ' V → 功率 ' + p.toFixed(2) + ' W');
+  toast('已计算功率');
+}
+
+/* ================= A4 Word 报告生成 ================= */
+function generateReport() {
+  if (!lastResults) calculate();
+  const inp = getInputs();
+  const r = lastResults;
+  const projectName = (document.getElementById('projectName').value || '布丝计算报告').replace(/[<>]/g, '');
+
+  let shapeDim = '';
+  switch (state.shape) {
+    case '矩形': shapeDim = '长 ' + inp.heatingLength + ' mm × 宽 ' + inp.heatingWidth + ' mm'; break;
+    case '圆形': shapeDim = '直径 ' + inp.circleDiameter + ' mm'; break;
+    case '梯形': shapeDim = '上底 ' + inp.trapTop + ' mm，下底 ' + inp.trapBottom + ' mm，高 ' + inp.trapHeight + ' mm'; break;
+  }
+
+  const warningsHTML = document.getElementById('warningArea').innerHTML;
+  const logsHTML = state.logs.length > 0
+    ? '<h2>四、调整记录</h2><ul>' + state.logs.map(l => '<li>' + l + '</li>').join('') + '</ul>'
+    : '';
+
+  // A4 Word HTML - 使用 @page A4，兼容 Word / WPS
+  const html = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>` + projectName + `</title>
+<xml>
+  <w:WordDocument>
+    <w:View>Print</w:View>
+    <w:Zoom>100</w:Zoom>
+  </w:WordDocument>
+</xml>
+<style>
+  @page WordSection1 {
+    size: 21.0cm 29.7cm;
+    margin: 2.0cm 2.0cm 2.0cm 2.0cm;
+    mso-page-orientation: portrait;
+  }
+  div.WordSection1 { page: WordSection1; }
+  body {
+    font-family: "微软雅黑", "Microsoft YaHei", Arial;
+    font-size: 10.5pt;
+    line-height: 1.7;
+    color: #1f2937;
+  }
+  h1 {
+    color: #1e3a5f;
+    font-size: 20pt;
+    border-bottom: 3pt solid #f59e0b;
+    padding-bottom: 6pt;
+    margin-bottom: 18pt;
+    text-align: center;
+  }
+  h2 {
+    color: #1e3a5f;
+    font-size: 14pt;
+    margin-top: 18pt;
+    border-bottom: 1.5pt solid #e5e7eb;
+    padding-bottom: 4pt;
+  }
+  h3 { color: #374151; font-size: 12pt; margin-top: 12pt; }
+  p.meta { color: #6b7280; font-size: 10pt; text-align: center; margin-bottom: 18pt; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 8pt 0;
+    font-size: 10.5pt;
+  }
+  td, th {
+    border: 1pt solid #9ca3af;
+    padding: 6pt 10pt;
+    vertical-align: middle;
+  }
+  th {
+    background: #1e3a5f;
+    color: #fff;
+    text-align: left;
+    font-weight: 600;
+  }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .warn { color: #dc2626; font-weight: 600; }
+  ol, ul { padding-left: 24pt; }
+  li { margin-bottom: 3pt; }
+  .footer-note { color: #9ca3af; font-size: 9pt; text-align: center; margin-top: 20pt; }
+</style>
+</head>
+<body>
+<div class="WordSection1">
+
+  <h1>` + projectName + `</h1>
+  <p class="meta">形状：` + state.shape + ` ｜ 布丝方式：` + state.layout + ` ｜ 生成时间：` + new Date().toLocaleString('zh-CN') + `</p>
+
+  <h2>一、输入参数</h2>
+  <table>
+    <tr><th width="40%">参数</th><th>数值</th></tr>
+    <tr><td>客户输入电压</td><td>` + inp.voltage + ` V</td></tr>
+    <tr><td>客户要求功率</td><td>` + inp.power + ` W</td></tr>
+    <tr><td>加热区形状与尺寸</td><td>` + state.shape + `（` + shapeDim + `）</td></tr>
+    <tr><td>布丝方式</td><td>` + state.layout + `（` + (state.shape === '圆形' ? '圆形不影响计算' : '影响丝根数与单丝长度') + `）</td></tr>
+    <tr><td>米阻</td><td>` + inp.resistancePerMeter + ` Ω/m</td></tr>
+    <tr><td>丝距</td><td>` + inp.wireDistance + ` mm</td></tr>
+    <tr><td>丝率</td><td>` + inp.wireRatio + `</td></tr>
+  </table>
+
+  <h2>二、计算结果</h2>
+  <table>
+    <tr><th width="40%">项目</th><th>数值</th></tr>
+    <tr><td>加热面积</td><td>` + r.area.toFixed(4) + ` m²</td></tr>
+    <tr><td>每平方米功率</td><td>` + r.powerPerM2.toFixed(2) + ` W/m²</td></tr>
+    <tr><td>阻值</td><td>` + r.resistance.toFixed(2) + ` Ω</td></tr>
+    <tr><td>电流</td><td>` + r.current.toFixed(2) + ` A</td></tr>
+    <tr><td>丝电流</td><td class="warn">` + r.wireCurrent.toFixed(4) + ` A</td></tr>
+    <tr><td>电阻丝总根数</td><td>` + r.totalWires + ` 根</td></tr>
+    <tr><td>单丝阻值</td><td>` + r.singleWireResistance.toFixed(4) + ` Ω</td></tr>
+    <tr><td>总面电阻</td><td>` + r.totalSurfaceResistance.toFixed(6) + ` Ω</td></tr>
+    <tr><td>分组数</td><td>` + r.groupCount + ` 组</td></tr>
+    <tr><td>小组汇流条长度 / 数量</td><td>` + r.smallBusLength.toFixed(1) + ` mm × 2 个</td></tr>
+    <tr><td>大组汇流条</td><td>` + (r.largeBusLen !== null ? r.largeBusLen.toFixed(1) + ' mm × ' + r.largeBusCount + ' 个' : '无') + `</td></tr>
+    <tr><td>直丝布丝机频率</td><td>` + (r.weavingFreq !== null ? r.weavingFreq.toFixed(1) + ' Hz' : '不适用') + `</td></tr>
+  </table>
+
+  <h2>三、计算公式与过程</h2>
+  <ol>
+    <li>加热面积 = ` + state.shape + ` 面积公式计算（单位 mm² → m²，除以 1,000,000）</li>
+    <li>每平方米功率 = 功率 / 面积 = ` + inp.power + ` / ` + r.area.toFixed(4) + ` ≈ ` + r.powerPerM2.toFixed(2) + ` W/m²</li>
+    <li>阻值 = 电压² / 功率 = ` + (inp.voltage * inp.voltage) + ` / ` + inp.power + ` ≈ ` + r.resistance.toFixed(2) + ` Ω</li>
+    <li>电流 = 电压 / 阻值 ≈ ` + r.current.toFixed(2) + ` A</li>
+    <li>电阻丝总根数 = 等效长 / 丝距 + 1 = ` + Math.round(getEquivalentLength(inp)) + ` / ` + inp.wireDistance + ` + 1 = ` + r.totalWires + `</li>
+    <li>单丝阻值 = 米阻 × (等效宽/1000) × 丝率 = ` + inp.resistancePerMeter + ` × (` + getEquivalentWidth(inp).toFixed(1) + `/1000) × ` + inp.wireRatio + ` ≈ ` + r.singleWireResistance.toFixed(4) + ` Ω</li>
+    <li>总面电阻 = 单丝阻值 / 根数 ≈ ` + r.totalSurfaceResistance.toFixed(6) + ` Ω</li>
+    <li>分组数 = √(阻值 / 总面电阻) 四舍五入 ≈ ` + r.groupCount + `</li>
+    <li>丝电流 = 电流 / (根数 / 分组数) ≈ ` + r.wireCurrent.toFixed(4) + ` A</li>
+    <li>小组汇流条长度 = 等效长 / 组数 ≈ ` + r.smallBusLength.toFixed(1) + ` mm</li>
+    <li>大组汇流条长度 = 小组汇流条长度 × 2（当组数 > 1 时）</li>
+  </ol>
+
+  ` + (warningsHTML ? '<h2>⚠ 警告信息</h2>' + warningsHTML : '') + `
+  ` + logsHTML + `
+
+  <p class="footer-note">本报告由「布丝计算器」自动生成 · 所有数据均为本地计算</p>
+</div>
+</body></html>`;
+
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = projectName + '.doc';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  toast('A4 报告已生成');
+}
+
+/* ================= Toast ================= */
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1600);
+}
+
+/* ================= Event wiring ================= */
+document.getElementById('shapeGroup').addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (chip) setShape(chip.dataset.shape);
+});
+document.getElementById('layoutGroup').addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (chip) { setLayout(chip.dataset.layout); saveState(); }
+});
+document.getElementById('resetBtn').addEventListener('click', resetAll);
+document.getElementById('reportBtn').addEventListener('click', generateReport);
+document.getElementById('exportBtn').addEventListener('click', exportJSON);
+document.getElementById('applyPowerM2').addEventListener('click', adjustPowerByM2);
+document.getElementById('applyGroups').addEventListener('click', adjustGroups);
+document.getElementById('calcVoltage').addEventListener('click', doCalcVoltage);
+document.getElementById('calcPower').addEventListener('click', doCalcPower);
+document.getElementById('clearLog').addEventListener('click', () => {
+  state.logs = []; renderLogs(); saveState(); toast('已清空记录');
+});
+
+// debounce: 防止频繁计算
+let debounceTimer = null;
+function debounceCalculate() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(calculate, 300);
+}
+
+// live calculation on any input change (with debounce)
+['voltage','power','heatingLength','heatingWidth','circleDiameter',
+ 'trapTop','trapBottom','trapHeight','resistancePerMeter',
+ 'wireDistance','wireRatio'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', debounceCalculate);
+});
+
+/* ================= Reset & Export ================= */
+function resetAll() {
+  // 恢复默认值
+  const defaults = {
+    projectName: '布丝计算项目',
+    voltage: 220, power: 1000,
+    heatingLength: 1000, heatingWidth: 500,
+    circleDiameter: 500,
+    trapTop: 300, trapBottom: 500, trapHeight: 400,
+    resistancePerMeter: 0.1, wireDistance: 20, wireRatio: 1
+  };
+  for (const [key, val] of Object.entries(defaults)) {
+    document.getElementById(key).value = val;
+  }
+  setShape('矩形');
+  setLayout('横向');
+  state.logs = [];
+  renderLogs();
+  saveState();
+  calculate();
+  toast('已重置为默认值');
+}
+
+function exportJSON() {
+  if (!lastResults) calculate();
+  const inp = getInputs();
+  const data = {
+    meta: {
+      projectName: document.getElementById('projectName').value,
+      shape: state.shape,
+      layout: state.layout,
+      exportTime: new Date().toISOString()
+    },
+    inputs: inp,
+    results: lastResults,
+    warnings: lastResults.wireCurrent > 0.054 ? ['丝电流超出0.054A'] :
+              (lastResults.powerPerM2 > 900 ? ['功率密度超出900W/m²'] : []),
+    adjustmentLog: state.logs
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = (document.getElementById('projectName').value || '布丝计算') + '.json';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  toast('JSON 已导出');
+}
+
+/* ================= PWA - Service Worker ================= */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+// Install prompt (Chrome / Android)
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+// iOS install hint
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+if (isIOS && !navigator.standalone) {
+  // iOS users may see a hint
+}
+
+/* ================= Init ================= */
+loadState();
+calculate();
+</script>
+</body>
+</html>

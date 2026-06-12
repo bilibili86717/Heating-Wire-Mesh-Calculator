@@ -1,0 +1,26 @@
+{
+  "name": "布丝计算器 - 电加热元件设计计算",
+  "short_name": "布丝计算器",
+  "description": "电加热元件布丝设计计算工具，支持矩形、圆形、梯形三种形状，可生成 A4 Word 报告，支持离线使用。",
+  "theme_color": "#1e3a5f",
+  "background_color": "#f5f7fa",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "./index.html",
+  "scope": "./",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
