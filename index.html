@@ -462,7 +462,6 @@
       <button id="resetBtn" class="secondary" style="background:#6b7280">🔄 重置</button>
       <button id="reportWordBtn" class="secondary">📄 Word报告</button>
       <button id="reportPdfBtn" class="secondary" style="background:#dc2626">📑 PDF报告</button>
-      <button id="exportBtn" class="secondary" style="background:#059669">📦 导出JSON</button>
     </div>
   </div>
 </header>
@@ -1103,7 +1102,6 @@ document.getElementById('layoutGroup').addEventListener('click', e => {
 document.getElementById('resetBtn').addEventListener('click', resetAll);
 document.getElementById('reportWordBtn').addEventListener('click', () => generateReport('word'));
 document.getElementById('reportPdfBtn').addEventListener('click', () => generateReport('pdf'));
-document.getElementById('exportBtn').addEventListener('click', exportJSON);
 document.getElementById('applyPowerM2').addEventListener('click', adjustPowerByM2);
 document.getElementById('applyGroups').addEventListener('click', adjustGroups);
 document.getElementById('calcVoltage').addEventListener('click', doCalcVoltage);
